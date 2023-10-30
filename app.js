@@ -1,67 +1,87 @@
-const readline = require('readline-sync');
+const readline = require('readline');
 
-const taskList = [];
+function pregunta(pregunta) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
 
-function addTask() {
-  const id = taskList.length + 1;
-  const description = readline.question('Descripción de la tarea: ');
-  const status = 'incompleta';
-  taskList.push({ id, description, status });
-  console.log('Tarea añadida exitosamente.');
+    return new Promise((resolve) => {
+        rl.question(pregunta, (respuesta) => {
+            rl.close();
+            resolve(respuesta);
+        });
+    });
 }
 
-function deleteTask() {
-  const id = readline.questionInt('ID de la tarea que deseas eliminar: ');
-  const taskIndex = taskList.findIndex(task => task.id === id);
-  if (taskIndex >= 0) {
-    taskList.splice(taskIndex, 1);
-    console.log('Tarea eliminada exitosamente.');
-  } else {
-    console.log('No se encontró la tarea con ese ID.');
-  }
+function añadirTarea(listaTareas, indicador, descripción) {
+    return new Promise((resolve) => {
+        const nuevaTarea = {
+            indicador,
+            descripción,
+            completada: false
+        };
+        listaTareas.push(nuevaTarea);
+        resolve(listaTareas);
+    });
 }
 
-function completeTask() {
-  const id = readline.questionInt('ID de la tarea que deseas marcar como completada: ');
-  const task = taskList.find(task => task.id === id);
-  if (task) {
-    task.status = 'completada';
-    console.log('Tarea marcada como completada exitosamente.');
-  } else {
-    console.log('No se encontró la tarea con ese ID.');
-  }
+function eliminarTarea(listaTareas, indicador) {
+    return new Promise((resolve) => {
+        const indice = listaTareas.findIndex(tarea => tarea.indicador === indicador);
+        if (indice !== -1) {
+            listaTareas.splice(indice, 1);
+        }
+        resolve(listaTareas);
+    });
 }
 
-function main() {
-  let running = true;
-  while (running) {
-    console.log('\n------------------------');
-    console.log('         TAREAS');
-    console.log('------------------------');
-    console.log('1. Añadir tarea');
-    console.log('2. Eliminar tarea');
-    console.log('3. Marcar tarea como completada');
-    console.log('4. Salir');
+function completarTarea(listaTareas, indicador) {
+    return new Promise((resolve) => {
+        const tarea = listaTareas.find(tarea => tarea.indicador === indicador);
+        if (tarea) {
+            tarea.completada = true;
+        }
+        resolve(listaTareas);
+    });
+}
 
-    const option = readline.questionInt('\nElige una opción: ');
+async function gestionarTareas() {
+    const listaTareas = [];
 
-    switch (option) {
-      case 1:
-        addTask();
-        break;
-      case 2:
-        deleteTask();
-        break;
-      case 3:
-        completeTask();
-        break;
-      case 4:
-        running = false;
-        break;
-      default:
-        console.log('Opción inválida. Por favor, elige una opción válida.');
+    while (true) {
+        console.log('-----------------');
+        console.log('1. Añadir tarea');
+        console.log('2. Eliminar tarea');
+        console.log('3. Completar tarea');
+        console.log('4. Salir');
+        console.log('-----------------');
+
+        const opcion = await pregunta('Elige una opción: ');
+
+        if (opcion === '1') {
+            const indicador = await pregunta('Indicador de la tarea: ');
+            const descripción = await pregunta('Descripción de la tarea: ');
+            listaTareas = await añadirTarea(listaTareas, indicador, descripción);
+            console.log('Tarea añadida correctamente');
+        } else if (opcion === '2') {
+            const indicador = await pregunta('Indicador de la tarea a eliminar: ');
+            listaTareas = await eliminarTarea(listaTareas, indicador);
+            console.log('Tarea eliminada correctamente');
+        } else if (opcion === '3') {
+            const indicador = await pregunta('Indicador de la tarea a completar: ');
+            listaTareas = await completarTarea(listaTareas, indicador);
+            console.log('Tarea completada correctamente');
+        } else if (opcion === '4') {
+            break;
+        } else {
+            console.log('Opción no válida');
+        }
     }
-  }
+
+    console.log('Lista de tareas final:');
+    console.log(listaTareas);
 }
 
-main();
+gestionarTareas();
+
